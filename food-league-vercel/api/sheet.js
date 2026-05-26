@@ -56,10 +56,20 @@ function analyse(csv) {
   const dishes = {};
   let total = 0;
 
+  let currentMonth = null;
+  let totalRow = null;
+
   for (const r of rows.slice(1)) {
     const date = String(r[0] || '').trim();
     const dishRaw = String(r[1] || '').trim();
-    if (date && !date.startsWith('5/')) continue;
+
+    if (date === 'Tổng') {
+      totalRow = r;
+      continue;
+    }
+
+    if (date) currentMonth = date.startsWith('5/') ? '5' : 'other';
+    if (currentMonth !== '5') continue;
     if (!dishRaw) continue;
 
     // Column layout: Ngày,Nội dung,9 people,Giảm Giá/người,Số người ăn,Tổng,...
@@ -72,7 +82,6 @@ function analyse(csv) {
     peopleNames.forEach((p, i) => {
       const v = num(r[2 + i]);
       if (v > 0) {
-        people[p].total += v;
         people[p].orders += 1;
         eater += 1;
       }
@@ -83,6 +92,14 @@ function analyse(csv) {
     dishes[d].count += 1;
     dishes[d].people += eater;
     dishes[d].total += rowTotal;
+  }
+
+  // Prefer the sheet's own "Tổng" row for person totals, because it is the source of truth users see.
+  if (totalRow) {
+    peopleNames.forEach((p, i) => {
+      people[p].total = num(totalRow[2 + i]);
+    });
+    total = num(totalRow[13]) || total;
   }
 
   const peopleList = Object.values(people).sort((a, b) => b.total - a.total);
