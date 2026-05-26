@@ -1,6 +1,13 @@
 const SHEET_ID = '1MFgr9UzqoybNH3jybqb-piY63DEf1t0lub46B0czmwg';
 const GID = '1221285139';
-const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
+const DEFAULT_MONTH = 5;
+function csvUrlForMonth(month) {
+  const sheetName = `Bill Hải tháng ${month}`;
+  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+}
+function fallbackCsvUrl() {
+  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
+}
 
 function parseCSV(text) {
   const rows = [];
@@ -121,8 +128,10 @@ function analyse(csv) {
 
 module.exports = async function handler(req, res) {
   try {
+    const month = Math.max(1, Math.min(12, Number(req.query?.month || DEFAULT_MONTH) || DEFAULT_MONTH));
     const bust = req.query?.refresh ? `&cacheBust=${Date.now()}` : '';
-    const response = await fetch(CSV_URL + bust, { cache: 'no-store' });
+    let response = await fetch(csvUrlForMonth(month) + bust, { cache: 'no-store' });
+    if (!response.ok && month === DEFAULT_MONTH) response = await fetch(fallbackCsvUrl() + bust, { cache: 'no-store' });
     if (!response.ok) throw new Error(`Google Sheet HTTP ${response.status}`);
     const csv = await response.text();
     const data = analyse(csv);
