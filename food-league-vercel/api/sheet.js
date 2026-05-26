@@ -134,6 +134,25 @@ module.exports = async function handler(req, res) {
     if (!response.ok && month === DEFAULT_MONTH) response = await fetch(fallbackCsvUrl() + bust, { cache: 'no-store' });
     if (!response.ok) throw new Error(`Google Sheet HTTP ${response.status}`);
     const csv = await response.text();
+    if (month !== DEFAULT_MONTH) {
+      const rows = parseCSV(csv);
+      const hasRequestedMonthRows = rows.slice(1).some(r => String(r[0] || '').trim().startsWith(month + '/'));
+      if (!hasRequestedMonthRows) {
+        return res.status(200).json({
+          updatedAt: new Date().toISOString(),
+          source: { sheetId: SHEET_ID, gid: GID, month },
+          total: 0,
+          people: ['Khánh','Hải','Tin','Duy','Tâm','Việt','Nhung','Đạt','Công ty'].map(name => ({ name, total: 0, orders: 0 })),
+          dishes: [],
+          champion: null,
+          runnerUp: null,
+          topDish: null,
+          crowdDish: null,
+          empty: true,
+          message: `Chưa có dữ liệu hoặc tab Bill Hải tháng ${month}`
+        });
+      }
+    }
     const data = analyse(csv);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Cache-Control', req.query?.refresh ? 'no-store' : 's-maxage=60, stale-while-revalidate=300');
