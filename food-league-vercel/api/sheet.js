@@ -70,7 +70,7 @@ function analyse(csv) {
     const date = String(r[0] || '').trim();
     const dishRaw = String(r[1] || '').trim();
 
-    if (date === 'Tổng') {
+    if (date === 'Tổng' || (!date && !dishRaw && num(r[13]) > 0 && peopleNames.some((p, i) => num(r[2 + i]) > 0))) {
       totalRow = r;
       continue;
     }
