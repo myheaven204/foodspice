@@ -62,7 +62,9 @@ function analyse(csv) {
     if (date && !date.startsWith('5/')) continue;
     if (!dishRaw) continue;
 
-    const rowTotal = num(r[12]);
+    // Column layout: Ngày,Nội dung,9 people,Giảm Giá/người,Số người ăn,Tổng,...
+    // So "Tổng" is index 13, not 12.
+    const rowTotal = num(r[13]);
     if (rowTotal <= 0) continue;
     total += rowTotal;
 
